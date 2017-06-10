@@ -11,15 +11,14 @@ typedef struct chess_moves {
    int x,y;
 }chess_moves;
 
-static  chess_moves move_KT[8] = { {2,1},{1,2},{-1,2},{-2,1},
-                              {-2,-1},{-1,-2},{1,-2},{2,-1} };
+static  chess_moves move_KT[8] = { {2,1},{1,2},{-1,2},{-2,1},{-2,-1},{-1,-2},{1,-2},{2,-1} };
 
 
 class board_base{
 public:
       //default constructor
-   board_base( size_t n, size_t m, size_t T)
-      :nRow(n), nCol(m), count(0), board(std::vector<std::vector<size_t>>(n,std::vector<size_t>(m, T))) {
+   board_base( size_t n, size_t m)
+      :nRow(n), nCol(m), count(1), board(std::vector<std::vector<size_t>>(n,std::vector<size_t>(m, 0))) {
      /*    size_t n = nn;
          size_t m = mm;
          if( n < m ){
@@ -43,23 +42,46 @@ public:
    }
 
    chess_moves next_move(){
-      if(depth.size()>0)
-         return depth.top();
+      if(G_set.size()>0){
+         chess_moves a = G_set.top();
+         G_set.pop();
+         while( a.x == X_set.top().x && a.y == X_set.top().y){
+            X_set.pop();
+
+            a = G_set.top();
+            G_set.pop();
+         }
+
+         
+         return a;
+      }
       return {-1,-1};
    } 
 
    bool last_move(){
-      return count==nRow*nCol-1;
+      return count==nRow*nCol;
    }
 
    bool empty_stack(){
-      return depth.empty();
+      return G_set.empty();
    }
+
+      // check if the next move (as per knight's constraints) is possible
+   bool isMovePossible(const chess_moves& move) {
+      int i = move.x;
+      int j = move.y;
+      if ((i >= 0 && i < nRow) && (j >= 0 && j < nCol) && (board[i][j] == 0))
+         return true;
+      return false;
+   }
+
+
    virtual bool move(const chess_moves& move) = 0;
 
 protected:
    std::vector<std::vector<size_t>> board;
-   std::stack<chess_moves> depth;
+   std::stack<chess_moves> X_set;
+   std::stack<chess_moves> G_set;
    size_t nRow;
    size_t nCol;
    size_t count;
@@ -69,8 +91,8 @@ protected:
 
 class record_board : public board_base {
 public:
-   record_board(size_t nn, size_t mm, size_t T=0)
-      :board_base(nn,mm,T){}
+   record_board(size_t nn, size_t mm)
+      :board_base(nn,mm){}
 
    bool move(const chess_moves& move){
       
@@ -87,47 +109,34 @@ private:
 };
 
 
+
 class heuristic_board : public board_base {
 
 public:
 
    heuristic_board(size_t nn=N, size_t mm=N)
-      :board_base(nn,mm,0),heuristic(std::vector<std::vector<size_t>>(n,std::vector<size_t>(m, 8))){
-
-        for ( size_t i = 0; i < nn; ++i){
-         for ( size_t j = 0; j < mm; ++j){
-            if(i == 0 || i == nn-1) {
-               if (j == 0 || j == mm-1)
-                     heuristic[i][j] = 2;
-               else if (j == 1 || j== mm-2)
-                     heuristic[i][j] = 3;
-               else   
-                     heuristic[i][j] = 4;
-               }
-            else if(i == 1 || i == nn-2) {
-               if (j == 0 || j == mm-1)
-                     heuristic[i][j] = 3;
-               else if (j == 1 || j==mm-2)       
-                     heuristic[i][j] = 4;
-               else
-                     heuristic[i][j] = 6;
-
-               }
-            else{
-               if (j == 0 || j==mm-1)
-                     heuristic[i][j] = 4;
-               else if ( j == 1 || j == mm-2)   
-                     heuristic[i][j] = 6;
-               
-               }
-
-            }
-         }
-        }
+      :board_base(nn,mm){}
     
    
 
    virtual ~heuristic_board(){}
+
+   size_t getDegree(const chess_moves& move){
+      
+      chess_moves next_move;
+      size_t num(0);
+
+      for (size_t i = 0; i < 8; ++i) {
+      // get the next move
+         next_move.x = move.x + move_KT[i].x;
+         next_move.y = move.y + move_KT[i].y;
+         if (isMovePossible(next_move)) {
+            ++num;
+         }
+      }
+    
+       return num;
+   }
 
    bool move(const chess_moves& move){
          // check the validity of the move
@@ -136,15 +145,18 @@ public:
          return false;
       }
      
-      explore_set.push_back(move);
       
+      G_set.push(move);
+
+      X_set.push(move);
+
       board[move.x][move.y]=count;
       ++count;
       
          //generate possible next move
       chess_moves next_move;
       std::list<chess_moves> temp;
-      std::list<size_t> index;
+      std::list<size_t> heuristic;
       for (size_t i = 0; i < 8; ++i) {
          // get the next move
          next_move.x = move.x + move_KT[i].x;
@@ -152,49 +164,20 @@ public:
    
          if (isMovePossible(next_move)) {
             temp.push_back(next_move);
-            heuristic[next_move.x][next_move.y] = heuristic[next_move.x][next_move.y] - 1;
-            index.push_back(heuristic[next_move.x][next_move.y]);
+            heuristic.push_back(getDegree(next_move));
          }
       }
 
-      if( index.empty())
-
-         
-      insert_move(temp, index);
+      insert_move(temp, heuristic);
 
       return true;
    }
 
-   void back_track( const chess_moves& move){
-
-
-      chess_moves next_move;
-      
-
-      for (size_t i = 0; i < 8; ++i) {
-      // get the next move
-         next_move.x = move.x + move_KT[i].x;
-         next_move.y = move.y + move_KT[i].y;
-         
-         if (isMovePossible(next_move)) {
-            heuristic[next_move.x][next_move.y] = heuristic[next_move.x][next_move.y] + 1;
-         }
-      }
-      
-      --count;
-      board[move.x][move.y]=0;
-
-   }
-      // check if the next move (as per knight's constraints) is possible
-   bool isMovePossible(const chess_moves& move) {
-      int i = move.x;
-      int j = move.y;
-      if ((i >= 0 && i < nRow) && (j >= 0 && j < nCol) && (board[i][j] == 0))
-         return true;
-      return false;
-   }
+   
 
 private:
+      //generic algorithm to find the minimum heuristic move
+      //store all possible moves in descending order of its degree
       // insert possible move in depth
    void insert_move(std::list<chess_moves> temp, std::list<size_t> index){
       std::list<chess_moves>::iterator it1 = temp.begin();
@@ -212,7 +195,7 @@ private:
             ++it4;
          };
          std::for_each(index.begin(),index.end(),fn);
-         depth.push(*it1);
+         G_set.push(*it1);
          temp.erase(it1);
          index.erase(it3);
          it1 = temp.begin();
@@ -221,26 +204,21 @@ private:
          it4 = index.begin();
       }
    }
-   std::vector<std::vector<size_t>> heuristic;
-   std::vector<chess_moves> explore_set;
+
 };
 
 
 
 
 template < typename chessboard >
-bool findTour(chess_moves move, chessboard board) {
-   int i;
-   chess_moves next_move;
-   if (board.last_move()) {
-      return true;
-   }
+bool findTour(const chess_moves& move, chessboard& board) {
+   
 
    board.move(move);
 
    while (!board.empty_stack()) {
       if (board.last_move()) {
-         board.printboard()
+         board.printboard();
          break;
       }
       
@@ -251,40 +229,15 @@ bool findTour(chess_moves move, chessboard board) {
    return false;
 }
 
-// wrapper function
-void knightTour() {
-   int tour[N][N];
-   int i,j;
 
-   // initialize tour matrix
-   for (i = 0; i < N; i++) {
-      for (j = 0; j < N; j++) {
-         tour[i][j] = 0;
-      }
-   }
-
-   // all possible moves that knight can take
-   chess_moves move_KT[8] = { {2,1},{1,2},{-1,2},{-2,1},
-                              {-2,-1},{-1,-2},{1,-2},{2,-1} };
-
-   // knight tour starts from coordinate (0,0)
-   chess_moves curr_move = {0,0};
-
-   // find a possible knight tour using a recursive function
-   // starting from current move 
-   if(findTour(tour, move_KT, curr_move, 0) == false) {
-      cout<<"\nKnight tour does not exist";
-   }
-   else {
-      cout<<"\nTour exist ...\n";
-      printTour(tour);
-   }
-}
 
 // main
 int main() {
    heuristic_board heuristic;
-   heuristic.printboard();
+   
+   
+   findTour({0,4},heuristic);
+
    return 0;
 }
 
