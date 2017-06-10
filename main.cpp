@@ -1,8 +1,9 @@
 #include<iostream>
 #include<stack>
+#include<deque>
 #include<vector>
 #include<list>
-#define N 8
+#define N 10
 
 using namespace std;
 
@@ -18,7 +19,7 @@ class board_base{
 public:
       //default constructor
    board_base( size_t n, size_t m)
-      :nRow(n), nCol(m), count(1), board(std::vector<std::vector<size_t>>(n,std::vector<size_t>(m, 0))) {
+      :nRow(n), nCol(m), count(1), board(std::vector<int>(n*m, 0)) {
      /*    size_t n = nn;
          size_t m = mm;
          if( n < m ){
@@ -28,26 +29,35 @@ public:
          if ( ((m%2)==1 && (n%2)==1) || (m==1) || (m==2) || (m==4) || (m == 3 && (n == 4 || n == 6 || n == 8 )))
             std::cout << " Knight's Tour is not possible"
       }*/
-      //destructor
+      
       }
+      //destructor
    virtual ~board_base(){}
-      //copy constructor
+      
+ 
    void printboard() {
+      //size_t num(1);
+      //std::for_each(X_set.begin(), X_set.end(), [&](chess_moves a){board[a.x][a.y] = num; ++num;});
       for (size_t i = 0; i < nRow; i++) {
          for (size_t j = 0; j < nCol; j++) {
-             std::cout<<board[i][j]<<"\t";
+             std::cout<<board[i*nCol+j]<<"\t";
          }
          std::cout<<endl;
          }
+   }
+
+   void printX_set(){
+      std::for_each(X_set.begin(), X_set.end(), [&](chess_moves a){std::cout<<a.x<< "," <<a.y<<"\t"; });
    }
 
    chess_moves next_move(){
       if(G_set.size()>0){
          chess_moves a = G_set.top();
          G_set.pop();
-         while( a.x == X_set.top().x && a.y == X_set.top().y){
-            X_set.pop();
-
+         while( a.x == X_set.back().x && a.y == X_set.back().y){
+            X_set.pop_back();
+            board[a.x*nCol+a.y] = 0;
+            --count;
             a = G_set.top();
             G_set.pop();
          }
@@ -70,7 +80,7 @@ public:
    bool isMovePossible(const chess_moves& move) {
       int i = move.x;
       int j = move.y;
-      if ((i >= 0 && i < nRow) && (j >= 0 && j < nCol) && (board[i][j] == 0))
+      if ((i >= 0 && i < nRow) && (j >= 0 && j < nCol) && (board[i*nCol+j] == 0))
          return true;
       return false;
    }
@@ -79,8 +89,8 @@ public:
    virtual bool move(const chess_moves& move) = 0;
 
 protected:
-   std::vector<std::vector<size_t>> board;
-   std::stack<chess_moves> X_set;
+   std::vector<int> board;
+   std::deque<chess_moves> X_set;
    std::stack<chess_moves> G_set;
    size_t nRow;
    size_t nCol;
@@ -89,19 +99,44 @@ protected:
 };
 
 
-class record_board : public board_base {
+class search_board : public board_base {
 public:
-   record_board(size_t nn, size_t mm)
+   search_board(size_t nn=N, size_t mm=N)
       :board_base(nn,mm){}
 
    bool move(const chess_moves& move){
+         // check the validity of the move
+      if(!isMovePossible(move)){
+         std::cout<<" move not possible";
+         return false;
+      }
+     
       
-      board[move.x][move.y] = count;
+      G_set.push(move);
+
+      X_set.push_back(move);
+
+      board[move.x*nCol +move.y]=count;
       ++count;
-      return true;
+      
+         //generate possible next move
+      chess_moves next_move;
+      
+      for (size_t i = 0; i < 8; ++i) {
+         // get the next move
+         next_move.x = move.x + move_KT[i].x;
+         next_move.y = move.y + move_KT[i].y;
+   
+         if (isMovePossible(next_move)) {
+            G_set.push(next_move);
+            
+      }
    }
 
+   return true;
    
+
+  } 
 
 private:
    
@@ -148,9 +183,9 @@ public:
       
       G_set.push(move);
 
-      X_set.push(move);
+      X_set.push_back(move);
 
-      board[move.x][move.y]=count;
+      board[move.x * nCol + move.y]=count;
       ++count;
       
          //generate possible next move
@@ -219,7 +254,7 @@ bool findTour(const chess_moves& move, chessboard& board) {
    while (!board.empty_stack()) {
       if (board.last_move()) {
          board.printboard();
-         break;
+         return true;
       }
       
       board.move(board.next_move());
@@ -233,11 +268,12 @@ bool findTour(const chess_moves& move, chessboard& board) {
 
 // main
 int main() {
-   heuristic_board heuristic;
+   //heuristic_board heuristic;
+   search_board dfs;
    
    
-   findTour({0,4},heuristic);
-
+   //findTour({0,0},heuristic);
+   findTour({0,0},dfs);
    return 0;
 }
 
