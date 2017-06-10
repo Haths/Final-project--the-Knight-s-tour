@@ -34,21 +34,32 @@ public:
    virtual ~board_base(){}
       //copy constructor
    void printboard() {
-   for (size_t i = 0; i < nRow; i++) {
-      for (size_t j = 0; j < nCol; j++) {
-          std::cout<<board[i][j]<<"\t";
-      }
-      std::cout<<endl;
-      }
+      for (size_t i = 0; i < nRow; i++) {
+         for (size_t j = 0; j < nCol; j++) {
+             std::cout<<board[i][j]<<"\t";
+         }
+         std::cout<<endl;
+         }
    }
 
+   chess_moves next_move(){
+      if(depth.size()>0)
+         return depth.top();
+      return {-1,-1};
+   } 
+
+   bool last_move(){
+      return count==nRow*nCol-1;
+   }
+
+   bool empty_stack(){
+      return depth.empty();
+   }
    virtual bool move(const chess_moves& move) = 0;
 
 protected:
    std::vector<std::vector<size_t>> board;
-
-   
-
+   std::stack<chess_moves> depth;
    size_t nRow;
    size_t nCol;
    size_t count;
@@ -81,32 +92,32 @@ class heuristic_board : public board_base {
 public:
 
    heuristic_board(size_t nn=N, size_t mm=N)
-      :board_base(nn,mm,8){
+      :board_base(nn,mm,0),heuristic(std::vector<std::vector<size_t>>(n,std::vector<size_t>(m, 8))){
 
         for ( size_t i = 0; i < nn; ++i){
          for ( size_t j = 0; j < mm; ++j){
             if(i == 0 || i == nn-1) {
                if (j == 0 || j == mm-1)
-                     board[i][j] = 2;
+                     heuristic[i][j] = 2;
                else if (j == 1 || j== mm-2)
-                     board[i][j] = 3;
+                     heuristic[i][j] = 3;
                else   
-                     board[i][j] = 4;
+                     heuristic[i][j] = 4;
                }
             else if(i == 1 || i == nn-2) {
                if (j == 0 || j == mm-1)
-                     board[i][j] = 3;
+                     heuristic[i][j] = 3;
                else if (j == 1 || j==mm-2)       
-                     board[i][j] = 4;
+                     heuristic[i][j] = 4;
                else
-                     board[i][j] = 6;
+                     heuristic[i][j] = 6;
 
                }
             else{
                if (j == 0 || j==mm-1)
-                     board[i][j] = 4;
+                     heuristic[i][j] = 4;
                else if ( j == 1 || j == mm-2)   
-                     board[i][j] = 6;
+                     heuristic[i][j] = 6;
                
                }
 
@@ -115,38 +126,82 @@ public:
         }
     
    
-      
 
    virtual ~heuristic_board(){}
 
    bool move(const chess_moves& move){
-
+         // check the validity of the move
       if(!isMovePossible(move)){
          std::cout<<" move not possible";
          return false;
       }
      
-      board[move.x][move.y] = 0;
+      explore_set.push_back(move);
+      
+      board[move.x][move.y]=count;
       ++count;
-
+      
+         //generate possible next move
       chess_moves next_move;
       std::list<chess_moves> temp;
-      std::list<size_t> heuristic;
+      std::list<size_t> index;
       for (size_t i = 0; i < 8; ++i) {
-      // get the next move
+         // get the next move
          next_move.x = move.x + move_KT[i].x;
          next_move.y = move.y + move_KT[i].y;
    
          if (isMovePossible(next_move)) {
             temp.push_back(next_move);
-            board[next_move.x][next_move.y] = board[next_move.x][next_move.y] + 1;
-            heuristic.push_back(board[next_move.x][next_move.y]);
+            heuristic[next_move.x][next_move.y] = heuristic[next_move.x][next_move.y] - 1;
+            index.push_back(heuristic[next_move.x][next_move.y]);
          }
       }
+
+      if( index.empty())
+
+         
+      insert_move(temp, index);
+
+      return true;
+   }
+
+   void back_track( const chess_moves& move){
+
+
+      chess_moves next_move;
+      
+
+      for (size_t i = 0; i < 8; ++i) {
+      // get the next move
+         next_move.x = move.x + move_KT[i].x;
+         next_move.y = move.y + move_KT[i].y;
+         
+         if (isMovePossible(next_move)) {
+            heuristic[next_move.x][next_move.y] = heuristic[next_move.x][next_move.y] + 1;
+         }
+      }
+      
+      --count;
+      board[move.x][move.y]=0;
+
+   }
+      // check if the next move (as per knight's constraints) is possible
+   bool isMovePossible(const chess_moves& move) {
+      int i = move.x;
+      int j = move.y;
+      if ((i >= 0 && i < nRow) && (j >= 0 && j < nCol) && (board[i][j] == 0))
+         return true;
+      return false;
+   }
+
+private:
+      // insert possible move in depth
+   void insert_move(std::list<chess_moves> temp, std::list<size_t> index){
       std::list<chess_moves>::iterator it1 = temp.begin();
       std::list<chess_moves>::iterator it2 = temp.begin();
-      std::list<size_t>::iterator it3 = heuristic.begin();
-      std::list<size_t>::iterator it4 = heuristic.begin();
+      std::list<size_t>::iterator it3 = index.begin();
+      std::list<size_t>::iterator it4 = index.begin();
+
       while(!temp.empty()){
          auto fn = [&](size_t& T)->void{
             if(T > *it3){
@@ -156,95 +211,43 @@ public:
             ++it2;
             ++it4;
          };
-         std::for_each(heuristic.begin(),heuristic.end(),fn);
+         std::for_each(index.begin(),index.end(),fn);
          depth.push(*it1);
          temp.erase(it1);
-         heuristic.erase(it3);
+         index.erase(it3);
          it1 = temp.begin();
          it2 = temp.begin();
-         it3 = heuristic.begin();
-         it4 = heuristic.begin();
+         it3 = index.begin();
+         it4 = index.begin();
       }
-
-      return true;
    }
-
-   void back_track( const chess_moves& move){
-
-
-      chess_moves next_move;
-      size_t num(0);
-
-      for (size_t i = 0; i < 8; ++i) {
-      // get the next move
-         next_move.x = move.x + move_KT[i].x;
-         next_move.y = move.y + move_KT[i].y;
-         
-         if (isMovePossible(next_move)) {
-            
-            board[next_move.x][next_move.y] = board[next_move.x][next_move.y] + 1;
-            ++num;
-         }
-      }
-      board[move.x][move.y] = num;
-      --count;
-
-   }
-      // check if the next move (as per knight's constraints) is possible
-   bool isMovePossible(const chess_moves& move) {
-      int i = move.x;
-      int j = move.y;
-      if ((i >= 0 && i < nRow) && (j >= 0 && j < nCol) && (board[i][j] != 0 && count < nCol*nRow))
-         return true;
-      return false;
-   }
-
-private:
-   std::stack<chess_moves> depth;
-
+   std::vector<std::vector<size_t>> heuristic;
+   std::vector<chess_moves> explore_set;
 };
 
 
-// check if the next move (as per knight's constraints) is possible
-bool isMovePossible(chess_moves next_move, int tour[N][N]) {
-   int i = next_move.x;
-   int j = next_move.y;
-   if ((i >= 0 && i < N) && (j >= 0 && j < N) && (tour[i][j] == 0))
-      return true;
-   return false;
-}
 
 
-// recursive function to find a knight tour
-bool findTour(int tour[N][N], chess_moves move_KT[],
-               chess_moves curr_move, int move_count) {
+template < typename chessboard >
+bool findTour(chess_moves move, chessboard board) {
    int i;
    chess_moves next_move;
-   if (move_count == N*N-1) {
-      // Knight tour is completed i.e all cells on the
-      // chess board has been visited by knight once 
+   if (board.last_move()) {
       return true;
    }
 
-   // try out the possible moves starting from the current coordinate
-   for (i = 0; i < N; i++) {
-      // get the next move
-      next_move.x = curr_move.x + move_KT[i].x;
-      next_move.y = curr_move.y + move_KT[i].y;
+   board.move(move);
 
-      if (isMovePossible(next_move, tour)) {
-         // if the move is possible
-         // increment the move count and store it in tour matrix
-         tour[next_move.x][next_move.y] = move_count+1;
-         if (findTour(tour, move_KT, next_move, move_count+1) == true) {
-            return true;
-         }
-         else {
-            // this move was invalid, try out other possiblities 
-            tour[next_move.x][next_move.y] = 0;
-         }
+   while (!board.empty_stack()) {
+      if (board.last_move()) {
+         board.printboard()
+         break;
       }
+      
+      board.move(board.next_move());
+
    }
+   
    return false;
 }
 
