@@ -30,13 +30,19 @@ public:
          }
       }
       //destructor
+
+   board_base(const board_base& that) = delete;
+
    virtual ~board_base(){
       delete[] board;
+      board = nullptr;
    }
 
    //function for resize the chessboard 
-   virtual void resize(size_t n, size_t m){
+   //user change
+   inline void resize(size_t n, size_t m){
       delete [] board;
+      board = nullptr;
       try{
             board = new int [n*m];
             std::fill_n(board, n*m, 0); 
@@ -46,13 +52,15 @@ public:
             board = nullptr;
             throw e;
          }
+      count = 1;
       nCol = m;
       nRow = n;
    }
 
    //function for resetting value in each grid
-   void reset(){
+   inline void reset(){
       delete [] board;
+      board = nullptr;
       try{
             board = new int [nRow*nCol];
             std::fill_n(board, nRow*nCol, 0); 
@@ -66,24 +74,24 @@ public:
    }
 
    //function for checking if it has a walk of enough length
-   bool enough_move(){return (count == nRow * nCol + 1);}
+   inline bool enough_move(){return (count == nRow * nCol + 1);}
 
    // check if the next move (as per knight's constraints) is possible 
-   bool isMovePossible(const int& i, const int& j) {
+   inline bool isMovePossible(const int& i, const int& j) {
       if ((i >= 0 && i < nRow) && (j >= 0 && j < nCol) && (board[i*nCol+j] == 0))
          return true;
 
       return false;
    }
 
+   //pure virtual function
+   //need to implement in derived class
+   //key step to update the board
    virtual bool move(const int& x, const int& y) = 0;
 
 protected:
    int* board;
-   size_t nRow;
-   size_t nCol;
-   size_t count;
-   
+   size_t nRow,nCol,count;
 };
 
 // use to perform normal depth first search
@@ -123,7 +131,7 @@ public:
          }
       }
       return true;
-   }
+      }
 
    bool update(){
       if(Gx_set.empty())
@@ -137,22 +145,16 @@ public:
          --count;
          x = Gx_set.back(); y = Gy_set.back();
          Gx_set.pop_back(); Gy_set.pop_back();
-      }
+         if(Gx_set.empty())
+            return false;
+         }
 
       move(x,y);
+
       return true;
-   } 
+      } 
 
-   
-   bool istour(const int& initx, const int& inity){
-      for (size_t i = 0; i < 8; ++i) 
-         if (Xx_set.back() + move_x[i] == initx && Xy_set.back() + move_y[i] == inity) 
-            return true;
-
-      return false;
-   }
-
-   bool findTour(const int& initx, const int& inity) {
+   bool Tour(const int& initx, const int& inity) {
       
        // Current points are same as initial points
        move(initx, inity);
@@ -160,30 +162,35 @@ public:
        // Keep picking next points 
        while (!enough_move() || !istour(initx,inity))
            if (!update()){
-               reset();
+               std::cout<<"\nBy examinating all possible walks, we claim that not such tour exist.";
                return false;
            }
-   
-      
    
       printboard();
       return true;
    
    }
-   
 
 
-   void printboard() {
+   inline bool istour(const int& initx, const int& inity){
+      for (size_t i = 0; i < 8; ++i) 
+         if (Xx_set.back() + move_x[i] == initx && Xy_set.back() + move_y[i] == inity) 
+            return true;
+         return false;
+      }
+
+
+   inline void printboard() {
       //size_t num(1);
       //std::for_each(X_set.begin(), X_set.end(), [&](chess_moves a){board[a.x][a.y] = num; ++num;});
       for (size_t i = 0; i < nRow; i++) {
          for (size_t j = 0; j < nCol; j++) {
 
             printf("%d\t",board[i*nCol+j]);
-         }
+            }
          printf("\n");
+         }
       }
-   }
       
 private:
    std::deque<int> Xx_set,Xy_set;
@@ -191,7 +198,7 @@ private:
 };
 
 
-// implemented using warnsdorff'sheuristics.
+// implemented using warnsdorff's heuristics.
 // ramdom select initial starting point to speed up search
 // re-calculate order of solution at print time
 // theory claim that it is run in linear time
@@ -199,33 +206,17 @@ private:
 class heuristic_board : public board_base {
 
 public:
-
+   //constructor
    heuristic_board(size_t nn=N, size_t mm=N)
       :board_base(nn,mm){}
-    
-   
-
+   //destructor
    virtual ~heuristic_board(){}
-
-   size_t getDegree(const int& x, const int& y){
-      
-      int sx,sy;
-      size_t num(0);
-
-      for (size_t i = 0; i < 8; ++i) {
-      // get the next move
-         sx = x + move_x[i];
-         sy = y + move_y[i];
-         if (isMovePossible(sx,sy)) {
-            ++num;
-         }
-      }
-
-       return num;
-   }
-
+   //implemented pure virtual function in children class
+   //store the minimum heuristic move into next_move
+   //compare all the possible moves
+   //if no next_move exists (stuck into a corner), next_move is set to equal to last_move
    bool move(const int& x, const int& y){
-         // check the validity of the move
+      // check the validity of the move
       if(!isMovePossible(x,y))
          return false;
      
@@ -245,25 +236,84 @@ public:
          sx = last_x + move_x[i];
          sy = last_y + move_y[i];
          temp = getDegree(sx,sy);
-         if (isMovePossible(sx,sy) && min_deg > getDegree(sx,sy)) {
+         if (isMovePossible(sx,sy) && min_deg > temp) {
             next_x = sx;
             next_y = sy;
             min_deg = temp;
          }
       }
-     return true;
+
+      return true;
+   }
+   //try function to find a closed tour
+   //using warsdorff heuristic
+   //return true if such tour is found
+   //otherwise clear the board and return false
+   bool findTour() {
       
+      // Randome initial position
+      int x = rand()%nRow;
+      int y = rand()%nCol;
+      
+      // Current points are same as initial points
+      move(x,y);
+   
+      // Keep picking next points using
+      // Warnsdorff's heuristic
+      while (!enough_move())
+         //tour stuck into a corner?
+         if (!update()){
+              reset();
+              return false;
+          }
+      //tour is not closed?
+      if(!istour(x,y)){
+         reset();
+         return false;
+      }
+   
+      
+      return true;
+   
    }
 
+   //wrapper function for find tour
+   void Tour(const int& initx, const int& inity){
+      srand(time(NULL));
+      while (!findTour()){;}
+      printboard(initx, inity);
+   }
 
-   bool move(){
+   // helper function to get the heuristic of an move
+   inline size_t getDegree(const int& x, const int& y){
+      
+      int sx,sy;
+      size_t num(0);
+
+      for (size_t i = 0; i < 8; ++i) {
+      // get the next move
+         sx = x + move_x[i];
+         sy = y + move_y[i];
+         if (isMovePossible(sx,sy)) {
+            ++num;
+         }
+      }
+
+       return num;
+   }
+
+   //check if last_move is equal to next_move
+   //(meaning that we are stuck at a corner) return false
+   //otherwise, perform next_move
+   inline bool update(){
       if(last_x == next_x )
          return false;
       else 
          return move(next_x, next_y);
    }
 
-   bool istour(const int& initx, const int& inity){
+   //check if is a closed tour
+   inline bool istour(const int& initx, const int& inity){
       for (size_t i = 0; i < 8; ++i) 
          if (last_x + move_x[i] == initx && last_y + move_y[i] == inity) 
             return true;
@@ -271,7 +321,10 @@ public:
       return false;
    }
 
-   void printboard(const int& initx, const int& inity) {
+   // genric algorithm
+   // lambda function used to calculate correct value
+   // print out the steps in correct way
+   inline void printboard(const int& initx, const int& inity) {
       
       int offset = board[initx * nCol + inity] - 1;
       
@@ -294,44 +347,10 @@ public:
       }
    }
 
-   bool findTour() {
-      
-       // Randome initial position
-      int x = rand()%nRow;
-      int y = rand()%nCol;
-      
-       // Current points are same as initial points
-       move(x,y);
    
-    
-       // Keep picking next points using
-       // Warnsdorff's heuristic
-       while (!enough_move())
-           if (!move()){
-               reset();
-               return false;
-           }
-   
-      if(!istour(x,y)){
-         reset();
-         return false;
-      }
-   
-      
-      return true;
-   
-   }
-   
-   //wrapper function for find tour
-   void Tour(const int& initx, const int& inity){
-      srand(time(NULL));
-      while (!findTour()){;}
-      printboard(initx, inity);
-   }
-
 private:
-   int next_x,next_y;
-   int last_x,last_y;
+   //private member to store next_move, last_move
+   int next_x,next_y,last_x,last_y;
 };
 
 
@@ -343,7 +362,7 @@ private:
 
 // main
 int main() {
-
+   /*
    std::cout<<"Enter initial (x,y) coordinates \n"<<"x: ";
    int x(-1),y(-1);
    while (!(std::cin >> x) || x < 0 ) {
@@ -385,14 +404,16 @@ int main() {
    if ( ((m%2)==1 && (n%2)==1) || (m==1) || (m==2) || (m==4) || (m == 3 && (n == 4 || n == 6 || n == 8 ))){
       std::cout << " Knight's Tour is impossible";
       throw;
-   }
-
+   }*/
+   int nn(5),mm(5),x(0),y(0);
    heuristic_board heuristic(nn,mm);
 
-   //dfs_board dfs;
+   //dfs_board dfs(nn,mm);
 
+   //dfs.Tour(x,y);
+   
    heuristic.Tour(x,y);
  
-    return 0;
+   return 0;
 }
 
