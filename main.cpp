@@ -5,15 +5,18 @@
 #define N 20
 
 
-
+// valid move pattern
 static int move_x[8] = {2,1,-1,-2,-2,-1,1,2};
 static int move_y[8] = {1,2,2,1,-1,-2,-2,-1};
 
 
+// pure virtual base class for chess board
+// use array to represent the chess board
+// cannot be instantiated
 class board_base{
 
 public:
-      //default constructor
+   //default constructor
    board_base( size_t n, size_t m)
       :nRow(n), nCol(m), count(1), board(nullptr) {
          try{
@@ -31,7 +34,7 @@ public:
       delete[] board;
    }
 
-      
+   //function for resize the chessboard 
    virtual void resize(size_t n, size_t m){
       delete [] board;
       try{
@@ -47,6 +50,7 @@ public:
       nRow = n;
    }
 
+   //function for resetting value in each grid
    void reset(){
       delete [] board;
       try{
@@ -61,12 +65,8 @@ public:
       count = 1;
    }
 
-
-
-   
+   //function for checking if it has a walk of enough length
    bool enough_move(){return (count == nRow * nCol + 1);}
-
-   
 
    // check if the next move (as per knight's constraints) is possible 
    bool isMovePossible(const int& i, const int& j) {
@@ -75,7 +75,6 @@ public:
 
       return false;
    }
-
 
    virtual bool move(const int& x, const int& y) = 0;
 
@@ -87,7 +86,10 @@ protected:
    
 };
 
-
+// use to perform normal depth first search
+// exhaust all the possible state
+// exponential complexity
+// super inefficient
 class dfs_board : public board_base {
 public:
    dfs_board(size_t nn=6, size_t mm=6)
@@ -177,20 +179,23 @@ public:
       for (size_t i = 0; i < nRow; i++) {
          for (size_t j = 0; j < nCol; j++) {
 
-            printf(" %2d ",board[i*nCol+j]);
+            printf("%d\t",board[i*nCol+j]);
          }
          printf("\n");
       }
    }
       
-
 private:
    std::deque<int> Xx_set,Xy_set;
    std::deque<int> Gx_set,Gy_set;
 };
 
 
-
+// implemented using warnsdorff'sheuristics.
+// ramdom select initial starting point to speed up search
+// re-calculate order of solution at print time
+// theory claim that it is run in linear time
+// in practice, go super fast, handle huge chess board
 class heuristic_board : public board_base {
 
 public:
@@ -283,7 +288,7 @@ public:
 
       for (size_t i = 0; i < nRow; i++) {
          for (size_t j = 0; j < nCol; j++) {
-             printf(" %2d ", board[i*nCol+j]);
+             printf("%d\t", board[i*nCol+j]);
          }
          printf("\n");
       }
