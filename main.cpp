@@ -343,37 +343,37 @@ private:
 
 // main
 int main() {
-/*
+
    std::cout<<"Enter initial (x,y) coordinates \n"<<"x: ";
    int x(-1),y(-1);
-   while (!(cin >> x) || x < 0 || x > N) {
-         cout << "Bad value!\n";
+   while (!(std::cin >> x) || x < 0 ) {
+         std::cout << "Bad value!\n";
          std::cout<<"\n"<<"x: ";
-         cin.clear();
-         cin.ignore(numeric_limits<streamsize>::max(), '\n');
+         std::cin.clear();
+         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
       }
-   std::cout<<"\ny: ";
-   while (!(cin >> y) || y < 0 || y > M) {
-      cout << "Bad value!\n";
+   std::cout<<"y: ";
+   while (!(std::cin >> y) || y < 0 ) {
+      std::cout << "Bad value!\n";
       std::cout<<"\n"<<"y: ";
-      cin.clear();
-      cin.ignore(numeric_limits<streamsize>::max(), '\n');
+      std::cin.clear();
+      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
    }
-
+   --x;--y;
    std::cout<<"Enter Row Number \n"<<"N: ";
-   int nn(N),mm(M);
-   while (!(cin >> nn) || nn < 0 ) {
-         cout << "Bad value!\n";
+   int nn(N),mm;
+   while (!(std::cin >> nn) || nn < 0 || nn < x) {
+         std::cout << "Bad value!\n";
          std::cout<<"\n"<<"N: ";
-         cin.clear();
-         cin.ignore(numeric_limits<streamsize>::max(), '\n');
+         std::cin.clear();
+         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
       }
    std::cout<<"Enter Column Number \n"<<"M: ";
-   while (!(cin >> mm) || mm< 0 ) {
-      cout << "Bad value!\n";
+   while (!(std::cin >> mm) || mm< 0 || mm < y) {
+      std::cout << "Bad value!\n";
       std::cout<<"\n"<<"M: ";
-      cin.clear();
-      cin.ignore(numeric_limits<streamsize>::max(), '\n');
+      std::cin.clear();
+      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
    }
 
    size_t n = nn;
@@ -386,12 +386,12 @@ int main() {
       std::cout << " Knight's Tour is impossible";
       throw;
    }
-*/
-   heuristic_board heuristic;
+
+   heuristic_board heuristic(nn,mm);
 
    //dfs_board dfs;
 
-   heuristic.Tour(0,0);
+   heuristic.Tour(x,y);
  
     return 0;
 }
