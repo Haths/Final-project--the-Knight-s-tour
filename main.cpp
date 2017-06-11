@@ -362,7 +362,7 @@ private:
 
 // main
 int main() {
-   /*
+   
    std::cout<<"Enter initial (x,y) coordinates \n"<<"x: ";
    int x(-1),y(-1);
    while (!(std::cin >> x) || x < 0 ) {
@@ -404,8 +404,8 @@ int main() {
    if ( ((m%2)==1 && (n%2)==1) || (m==1) || (m==2) || (m==4) || (m == 3 && (n == 4 || n == 6 || n == 8 ))){
       std::cout << " Knight's Tour is impossible";
       throw;
-   }*/
-   int nn(5),mm(5),x(0),y(0);
+   }
+   //int nn(5),mm(5),x(0),y(0);
    heuristic_board heuristic(nn,mm);
 
    //dfs_board dfs(nn,mm);
