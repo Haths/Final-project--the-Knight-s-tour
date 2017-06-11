@@ -3,8 +3,8 @@
 #include<deque>
 #include<vector>
 #include<list>
-#define N 8
-#define M 8
+#define N 20
+#define M 20
 
 using namespace std;
 
@@ -32,9 +32,16 @@ public:
       nCol = m;
       nRow = n;
    }
-   void printboard() {
-      //size_t num(1);
-      //std::for_each(X_set.begin(), X_set.end(), [&](chess_moves a){board[a.x][a.y] = num; ++num;});
+   
+   void printboard(const chess_moves& init) {
+      int offset = board[init.x * nCol + init.y] - 1;
+      auto fn = [&](int& value){
+         if(value > offset)
+            value = value - offset;
+         else
+            value = value + nRow * nCol - offset;
+      };
+      std::for_each(board.begin(), board.end(), fn);
       for (size_t i = 0; i < nRow; i++) {
          for (size_t j = 0; j < nCol; j++) {
              std::cout<<board[i*nCol+j]<<"\t";
@@ -218,15 +225,10 @@ public:
    }
 
    bool istour(const chess_moves& init){
-      chess_moves next_move;
-      for (size_t i = 0; i < 8; ++i) {
-      // get the next move
-         next_move.x = last_move.x + move_KT[i].x;
-         next_move.y = last_move.y + move_KT[i].y;
-         if (next_move.x == init.x && next_move.y == init.y) {
+      for (size_t i = 0; i < 8; ++i) 
+         if (last_move.x + move_KT[i].x == init.x && last_move.y + move_KT[i].y == init.y) 
             return true;
-         }
-      }
+
       return false;
    }
 
@@ -243,7 +245,7 @@ private:
 
 
 template < typename chessboard >
-bool findTour(const chess_moves& init, chessboard& board) {
+bool findTour(const chess_moves& init, chessboard board) {
 
     // Randome initial position
    int sx = rand()%N;
@@ -261,7 +263,8 @@ bool findTour(const chess_moves& init, chessboard& board) {
 
    if(!board.istour({sx,sy}))
       return false;
-   board.printboard();
+
+   board.printboard(init);
    return true;
 
 }
