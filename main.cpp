@@ -1,12 +1,10 @@
 #include<iostream>
-#include<stack>
 #include<deque>
-#include<vector>
-#include<list>
-#define N 40
-#define M 40
+#include<algorithm>
 
-using namespace std;
+#define N 40
+
+
 
 static int move_x[8] = {2,1,-1,-2,-2,-1,1,2};
 static int move_y[8] = {1,2,2,1,-1,-2,-2,-1};
@@ -17,20 +15,49 @@ class board_base{
 public:
       //default constructor
    board_base( size_t n, size_t m)
-      :nRow(n), nCol(m), count(1), board(std::vector<int>(n*m, 0)) {}
+      :nRow(n), nCol(m), count(1), board(nullptr) {
+         try{
+            board = new int [n*m];
+            std::fill_n(board, n*m, 0); 
+         }
+         catch(const std::bad_alloc& e){
+            delete[] board;
+            board = nullptr;
+            throw e;
+         }
+      }
       //destructor
-   virtual ~board_base(){}
+   virtual ~board_base(){
+      delete[] board;
+   }
 
       
    virtual void resize(size_t n, size_t m){
-      board=std::vector<int>(n*m, 0);
-      count = 1;
+      delete [] board;
+      try{
+            board = new int [n*m];
+            std::fill_n(board, n*m, 0); 
+         }
+         catch(const std::bad_alloc& e){
+            delete[] board;
+            board = nullptr;
+            throw e;
+         }
       nCol = m;
       nRow = n;
    }
 
    void reset(){
-      board=std::vector<int>(nRow*nCol, 0);
+      delete [] board;
+      try{
+            board = new int [nRow*nCol];
+            std::fill_n(board, nRow*nCol, 0); 
+         }
+         catch(const std::bad_alloc& e){
+            delete[] board;
+            board = nullptr;
+            throw e;
+         }
       count = 1;
    }
 
@@ -53,7 +80,7 @@ public:
    virtual bool move(const int& x, const int& y) = 0;
 
 protected:
-   std::vector<int> board;
+   int* board;
    size_t nRow;
    size_t nCol;
    size_t count;
@@ -147,7 +174,7 @@ class heuristic_board : public board_base {
 
 public:
 
-   heuristic_board(size_t nn=N, size_t mm=M)
+   heuristic_board(size_t nn=N, size_t mm=N)
       :board_base(nn,mm){}
     
    
@@ -228,18 +255,17 @@ public:
          else
             value = value + nRow * nCol - offset;
       };
-      std::for_each(board.begin(), board.end(), fn);
+      std::for_each(board, board + nCol*nRow, fn);
       for (size_t i = 0; i < nRow; i++) {
          for (size_t j = 0; j < nCol; j++) {
              std::cout<<board[i*nCol+j]<<"\t";
          }
-         std::cout<<endl;
+         std::cout<<std::endl;
          }
    }
 
-   bool findTour(const int& initx, const int& inity) {
+   bool findTour() {
       
-
        // Randome initial position
       int x = rand()%nRow;
       int y = rand()%nCol;
@@ -261,15 +287,16 @@ public:
          return false;
       }
    
-      printboard(initx, inity);
+      
       return true;
    
    }
    
+   //wrapper function for find tour
    void Tour(const int& initx, const int& inity){
       srand(time(NULL));
-      while (!findTour(initx, inity))
-         {;}
+      while (!findTour()){;}
+      printboard(initx, inity);
    }
 
 private:
