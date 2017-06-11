@@ -2,7 +2,7 @@
 #include<deque>
 #include<algorithm>
 
-#define N 40
+#define N 20
 
 
 
@@ -87,86 +87,107 @@ protected:
    
 };
 
-/*
-class search_board : public board_base {
+
+class dfs_board : public board_base {
 public:
-   search_board(size_t nn=N, size_t mm=M)
+   dfs_board(size_t nn=6, size_t mm=6)
       :board_base(nn,mm){}
 
-// check the validity of the move
-   bool move(const int& i, const int& j){
-      if(!isMovePossible(i,j))
+   // check the validity of the move
+   bool move(const int& x, const int& y){
+      if(!isMovePossible(x,y))
          return false;
      
-      
-      G_set.push_back(move);
+      Gx_set.push_back(x);
+      Gy_set.push_back(y);
 
-      X_set.push_back(move);
+      Xx_set.push_back(x);
+      Xy_set.push_back(y);
 
-      board[move.x*nCol +move.y]=count;
+      board[x*nCol + y] = count;
       ++count;
       
          //generate possible next move
-      chess_moves next_move;
+      int sx,sy;
       
-      for (size_t i = 0; i < 8; ++i) {
+      for (size_t i = 0; i < 8; ++i){
          // get the next move
-         next_move.x = move.x + move_KT[i].x;
-         next_move.y = move.y + move_KT[i].y;
+         sx = x + move_x[i];
+         sy = y + move_y[i];
    
-         if (isMovePossible(next_move)) {
-            G_set.push_back(next_move);
-            
+         if (isMovePossible(sx,sy)){
+            Gx_set.push_back(sx);
+            Gy_set.push_back(sy);
          }
       }
       return true;
-  } 
+   }
 
-  chess_moves next_move(){
-      if(G_set.size()>0){
-         chess_moves a = G_set.back();
-         G_set.pop_back();
-         while( a.x == X_set.back().x && a.y == X_set.back().y){
-            X_set.pop_back();
-            board[a.x*nCol+a.y] = 0;
-            --count;
-            a = G_set.back();
-            G_set.pop_back();
-         }
+   bool update(){
+      if(Gx_set.empty())
+         return false;
 
-         
-         return a;
+      int x = Gx_set.back(), y = Gy_set.back();
+      Gx_set.pop_back();Gy_set.pop_back();
+      while( x == Xx_set.back() && y == Xy_set.back()){
+         Xx_set.pop_back();Xy_set.pop_back();
+         board[x*nCol+y] = 0;
+         --count;
+         x = Gx_set.back(); y = Gy_set.back();
+         Gx_set.pop_back(); Gy_set.pop_back();
       }
-      return {-1,-1};// G_set is empty
+
+      move(x,y);
+      return true;
    } 
 
-   bool istour(const chess_moves& init){
-      chess_moves next_move;
-      for (size_t i = 0; i < 8; ++i) {
-      // get the next move
-         next_move.x = X_set.back().x + move_KT[i].x;
-         next_move.y = X_set.back().y + move_KT[i].y;
-         if (next_move.x == init.x && next_move.y == init.y) {
+   
+   bool istour(const int& initx, const int& inity){
+      for (size_t i = 0; i < 8; ++i) 
+         if (Xx_set.back() + move_x[i] == initx && Xy_set.back() + move_y[i] == inity) 
             return true;
-         }
-      }
+
       return false;
    }
 
+   bool findTour(const int& initx, const int& inity) {
+      
+       // Current points are same as initial points
+       move(initx, inity);
+    
+       // Keep picking next points 
+       while (!enough_move() || !istour(initx,inity))
+           if (!update()){
+               reset();
+               return false;
+           }
+   
+      
+   
+      printboard();
+      return true;
+   
+   }
    
 
-   bool empty_stack(){
-      return G_set.empty();
-   }
 
+   void printboard() {
+      //size_t num(1);
+      //std::for_each(X_set.begin(), X_set.end(), [&](chess_moves a){board[a.x][a.y] = num; ++num;});
+      for (size_t i = 0; i < nRow; i++) {
+         for (size_t j = 0; j < nCol; j++) {
+
+            printf(" %2d ",board[i*nCol+j]);
+         }
+         printf("\n");
+      }
+   }
       
 
 private:
-   std::deque<chess_moves> X_set;
-   std::deque<chess_moves> G_set;
-   
-
-};*/
+   std::deque<int> Xx_set,Xy_set;
+   std::deque<int> Gx_set,Gy_set;
+};
 
 
 
@@ -246,7 +267,9 @@ public:
    }
 
    void printboard(const int& initx, const int& inity) {
+      
       int offset = board[initx * nCol + inity] - 1;
+      
       // genric algorithm
       //lambda function used to calculate correct value
       auto fn = [&](int& value){
@@ -255,13 +278,15 @@ public:
          else
             value = value + nRow * nCol - offset;
       };
+
       std::for_each(board, board + nCol*nRow, fn);
+
       for (size_t i = 0; i < nRow; i++) {
          for (size_t j = 0; j < nCol; j++) {
-             std::cout<<board[i*nCol+j]<<"\t";
+             printf(" %2d ", board[i*nCol+j]);
          }
-         std::cout<<std::endl;
-         }
+         printf("\n");
+      }
    }
 
    bool findTour() {
@@ -300,10 +325,6 @@ public:
    }
 
 private:
-      //generic algorithm to find the minimum heuristic move
-      //store all possible moves in descending order of its degree
-      // insert possible move in depth
-
    int next_x,next_y;
    int last_x,last_y;
 };
@@ -362,6 +383,8 @@ int main() {
    }
 */
    heuristic_board heuristic;
+
+   //dfs_board dfs;
 
    heuristic.Tour(0,0);
  
