@@ -23,20 +23,53 @@ public:
             board = new int [n*m];
             std::fill_n(board, n*m, 0); 
          }
-         catch(const std::bad_alloc& e){
+         catch(const std::exception& e){
             delete[] board;
-            board = nullptr;
             throw e;
          }
       }
-      //destructor
 
-   board_base(const board_base& that) = delete;
+   //copy constructor
+   board_base(const board_base& that)
+      :nRow(that.nRow), nCol(that.nCol), count(that.count), board(nullptr){
+         try{
+            size_t _size = (that.nCol*that.nRow);
+            board = new int [_size];
+            std::copy(that.board, that.board+_size, board);
+         }
+         catch(const std::exception& e){
+            delete[] board;
+            throw e;
+         }
+   }
 
+   //move constructor
+   board_base(board_base&& that):board(nullptr){
+      this->swap(that);
+   }
+
+   void swap(board_base& _b) {
+      std::swap(board, _b.board);
+      std::swap(nRow, _b.nRow);
+      std::swap(nCol, _b.nCol);
+      std::swap(count, _b.count);
+   }
+
+   //copy and swap assignment operator
+   board_base& operator=(board_base that){
+      this->swap(that);
+      return this;
+   }
+
+
+   //destructor
    virtual ~board_base(){
       delete[] board;
       board = nullptr;
    }
+
+
+
 
    //function for resize the chessboard 
    //user change
@@ -47,9 +80,8 @@ public:
             board = new int [n*m];
             std::fill_n(board, n*m, 0); 
          }
-         catch(const std::bad_alloc& e){
+         catch(const std::exception& e){
             delete[] board;
-            board = nullptr;
             throw e;
          }
       count = 1;
@@ -65,9 +97,8 @@ public:
             board = new int [nRow*nCol];
             std::fill_n(board, nRow*nCol, 0); 
          }
-         catch(const std::bad_alloc& e){
+         catch(const std::exception& e){
             delete[] board;
-            board = nullptr;
             throw e;
          }
       count = 1;
