@@ -9,10 +9,24 @@
 static int move_x[8] = {2,1,-1,-2,-2,-1,1,2};
 static int move_y[8] = {1,2,2,1,-1,-2,-2,-1};
 
+//checking if next moves satisfies some conditions
+//temp function allow different predicate
+template<typename PRED>
+bool _testmove(const int& x, const int&y, PRED pred){
+   int sx,sy;
 
+   for (size_t i = 0; i < 8; ++i) {
+      sx = x + move_x[i];
+      sy = y + move_y[i];
+
+      if (pred(sx, sy))
+         return true;
+   }
+   return false;
+}
 // pure virtual base class for chess board
 // use array to represent the chess board
-// cannot be instantiated
+// cannot be instanstiated
 class board_base{
 
 public:
@@ -21,6 +35,7 @@ public:
       :nRow(n), nCol(m), count(1), board(nullptr) {
          try{
             board = new int [n*m];
+            //generic
             std::fill_n(board, n*m, 0); 
          }
          catch(const std::exception& e){
@@ -29,37 +44,9 @@ public:
          }
       }
 
-   //copy constructor
-   board_base(const board_base& that)
-      :nRow(that.nRow), nCol(that.nCol), count(that.count), board(nullptr){
-         try{
-            size_t _size = (that.nCol*that.nRow);
-            board = new int [_size];
-            std::copy(that.board, that.board+_size, board);
-         }
-         catch(const std::exception& e){
-            delete[] board;
-            throw e;
-         }
-   }
+   //copy constructor disable
+   board_base(const board_base& that) = delete;
 
-   //move constructor
-   board_base(board_base&& that):board(nullptr){
-      this->swap(that);
-   }
-
-   void swap(board_base& _b) {
-      std::swap(board, _b.board);
-      std::swap(nRow, _b.nRow);
-      std::swap(nCol, _b.nCol);
-      std::swap(count, _b.count);
-   }
-
-   //copy and swap assignment operator
-   board_base& operator=(board_base that){
-      this->swap(that);
-      return this;
-   }
 
 
    //destructor
@@ -67,8 +54,6 @@ public:
       delete[] board;
       board = nullptr;
    }
-
-
 
 
    //function for resize the chessboard 
@@ -89,20 +74,7 @@ public:
       nRow = n;
    }
 
-   //function for resetting value in each grid
-   inline void reset(){
-      delete [] board;
-      board = nullptr;
-      try{
-            board = new int [nRow*nCol];
-            std::fill_n(board, nRow*nCol, 0); 
-         }
-         catch(const std::exception& e){
-            delete[] board;
-            throw e;
-         }
-      count = 1;
-   }
+
 
    //function for checking if it has a walk of enough length
    inline bool enough_move(){return (count == nRow * nCol + 1);}
@@ -115,16 +87,40 @@ public:
       return false;
    }
 
+   //check if is a closed tour
+   inline bool istour(const int& initx, const int& inity){
+
+      auto fn=[&](const int& x, const int& y)->bool{
+         return (x  == initx && y == inity) ;   
+      };
+
+      return _testmove(last_x, last_y, fn);
+
+   }
+
+   // print out the steps in correct way
+   inline void printboard() {
+      for (size_t i = 0; i < nRow; i++) {
+         for (size_t j = 0; j < nCol; j++) {
+             printf("%d\t", board[i*nCol+j]);
+         }
+         printf("\n");
+      }
+   }
+
    //pure virtual function
    //need to implement in derived class
-   //key step to update the board
-   virtual bool move(const int& x, const int& y) = 0;
+   //key find the tour
+   virtual void Tour(const int& x, const int& y) = 0;
 
 protected:
+   //dynamic array store the move
    int* board;
-   size_t nRow,nCol,count;
+   // board size, move count, previoius move
+   size_t nRow,nCol,count,last_x,last_y;
 };
 
+// use lambda function to recalculate the move order
 // use to perform normal depth first search
 // exhaust all the possible state
 // exponential complexity
@@ -138,6 +134,9 @@ public:
    bool move(const int& x, const int& y){
       if(!isMovePossible(x,y))
          return false;
+
+      last_x = x;
+      last_y = y;
      
       Gx_set.push_back(x);
       Gy_set.push_back(y);
@@ -147,7 +146,7 @@ public:
 
       board[x*nCol + y] = count;
       ++count;
-      
+
          //generate possible next move
       int sx,sy;
       
@@ -185,46 +184,27 @@ public:
       return true;
       } 
 
-   bool Tour(const int& initx, const int& inity) {
+   void Tour(const int& initx, const int& inity) {
       
-       // Current points are same as initial points
-       move(initx, inity);
-    
-       // Keep picking next points 
-       while (!enough_move() || !istour(initx,inity))
-           if (!update()){
-               std::cout<<"\nBy examinating all possible walks, we claim that not such tour exist.";
-               return false;
-           }
+      // Current points are same as initial points
+      move(initx, inity);
    
+      // Keep picking next points 
+      while (!enough_move() || !istour(initx,inity))
+          if (!update()){
+              std::cout<<"\nBy examinating all possible walks, we claim that not such tour exist.";
+              return;
+          }
+
       printboard();
-      return true;
    
    }
 
-
-   inline bool istour(const int& initx, const int& inity){
-      for (size_t i = 0; i < 8; ++i) 
-         if (Xx_set.back() + move_x[i] == initx && Xy_set.back() + move_y[i] == inity) 
-            return true;
-         return false;
-      }
-
-
-   inline void printboard() {
-      //size_t num(1);
-      //std::for_each(X_set.begin(), X_set.end(), [&](chess_moves a){board[a.x][a.y] = num; ++num;});
-      for (size_t i = 0; i < nRow; i++) {
-         for (size_t j = 0; j < nCol; j++) {
-
-            printf("%d\t",board[i*nCol+j]);
-            }
-         printf("\n");
-         }
-      }
       
 private:
+   //explore set
    std::deque<int> Xx_set,Xy_set;
+   //generated set
    std::deque<int> Gx_set,Gy_set;
 };
 
@@ -240,8 +220,7 @@ public:
    //constructor
    heuristic_board(size_t nn=N, size_t mm=N)
       :board_base(nn,mm){}
-   //destructor
-   virtual ~heuristic_board(){}
+
    //implemented pure virtual function in children class
    //store the minimum heuristic move into next_move
    //compare all the possible moves
@@ -294,12 +273,11 @@ public:
       while (!enough_move())
          //tour stuck into a corner?
          if (!update()){
-              reset();
               return false;
           }
       //tour is not closed?
       if(!istour(x,y)){
-         reset();
+         this->reset();
          return false;
       }
    
@@ -312,10 +290,30 @@ public:
    void Tour(const int& initx, const int& inity){
       srand(time(NULL));
       while (!findTour()){;}
-      printboard(initx, inity);
+   
+      this->recal(initx,inity);
+      printboard();
    }
 
-   // helper function to get the heuristic of an move
+
+   // genric algorithm
+   //lambda function used to calculate correct value
+   //recalculate the move order
+   inline void recal(const int& initx, const int& inity){
+      int offset = board[initx * nCol + inity] - 1;
+      // genric algorithm
+      //lambda function used to calculate correct value
+      auto fn = [&](int& value){
+         if(value > offset)
+            value = value - offset;
+         else
+            value = value + nRow * nCol - offset;
+      };
+
+      std::for_each(board, board + nCol*nRow, fn);
+   }
+
+   //  heuristic of an move
    inline size_t getDegree(const int& x, const int& y){
       
       int sx,sy;
@@ -333,55 +331,37 @@ public:
        return num;
    }
 
+   //function for resetting value in each grid
+   inline void reset(){
+      delete [] board;
+      board = nullptr;
+      try{
+            board = new int [nRow*nCol];
+            std::fill_n(board, nRow*nCol, 0); 
+         }
+         catch(const std::exception& e){
+            delete[] board;
+            throw e;
+         }
+      count = 1;
+   }
+
    //check if last_move is equal to next_move
    //(meaning that we are stuck at a corner) return false
    //otherwise, perform next_move
    inline bool update(){
-      if(last_x == next_x )
-         return false;
-      else 
-         return move(next_x, next_y);
-   }
-
-   //check if is a closed tour
-   inline bool istour(const int& initx, const int& inity){
-      for (size_t i = 0; i < 8; ++i) 
-         if (last_x + move_x[i] == initx && last_y + move_y[i] == inity) 
-            return true;
-
-      return false;
-   }
-
-   // genric algorithm
-   // lambda function used to calculate correct value
-   // print out the steps in correct way
-   inline void printboard(const int& initx, const int& inity) {
-      
-      int offset = board[initx * nCol + inity] - 1;
-      
-      // genric algorithm
-      //lambda function used to calculate correct value
-      auto fn = [&](int& value){
-         if(value > offset)
-            value = value - offset;
-         else
-            value = value + nRow * nCol - offset;
-      };
-
-      std::for_each(board, board + nCol*nRow, fn);
-
-      for (size_t i = 0; i < nRow; i++) {
-         for (size_t j = 0; j < nCol; j++) {
-             printf("%d\t", board[i*nCol+j]);
+         if(last_x == next_x ){
+            this->reset();
+            return false;
          }
-         printf("\n");
+         else 
+            return move(next_x, next_y);
       }
-   }
 
    
 private:
    //private member to store next_move, last_move
-   int next_x,next_y,last_x,last_y;
+   int next_x,next_y;
 };
 
 
@@ -393,7 +373,16 @@ private:
 
 // main
 int main() {
-   
+
+   char input('a');
+   std::cout<<"Enter: ordinary Depth first search[d]\t warnsdorff's heuristics[h]\n";
+   while (!(std::cin >> input) || (input != 'd' && input!= 'h') ) {
+      std::cout << "Bad value!\n";
+      std::cout<<"\n"<<"Enter: ordinary Depth first search[d]\t warnsdorff's heuristics[h]\n";
+      std::cin.clear();
+      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+   }
+
    std::cout<<"Enter initial (x,y) coordinates \n"<<"x: ";
    int x(-1),y(-1);
    while (!(std::cin >> x) || x < 0 ) {
@@ -436,14 +425,16 @@ int main() {
       std::cout << " Knight's Tour is impossible";
       throw;
    }
-   //int nn(5),mm(5),x(0),y(0);
-   heuristic_board heuristic(nn,mm);
 
-   //dfs_board dfs(nn,mm);
 
-   //dfs.Tour(x,y);
-   
-   heuristic.Tour(x,y);
+   if(input == 'd'){
+      dfs_board game(nn,mm);
+      game.Tour(x,y);
+   }
+   else{
+      heuristic_board game(nn,mm);
+      game.Tour(x,y);
+   }
  
    return 0;
 }
