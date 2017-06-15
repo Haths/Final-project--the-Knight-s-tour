@@ -32,13 +32,9 @@ bool _testmove(const int& x, const int&y, PRED pred){
 // cannot be instanstiated
 class board_base{
 
-
+public:
    //default constructor
    board_base( size_t n, size_t m);
-
-   //copy constructor disable
-   board_base(const board_base& that) = delete;
-
 
 
    //destructor
@@ -122,6 +118,8 @@ public:
    dfs_board(size_t nn=6, size_t mm=6)
       :board_base(nn,mm){}
 
+   virtual ~dfs_board(){}
+
    // check the validity of the move
    bool move(const int& x, const int& y);
 
@@ -149,6 +147,8 @@ public:
    //constructor
    heuristic_board(size_t nn=N, size_t mm=N)
       :board_base(nn,mm){}
+
+   virtual ~heuristic_board(){};
 
    //implemented pure virtual function in children class
    //store the minimum heuristic move into next_move
