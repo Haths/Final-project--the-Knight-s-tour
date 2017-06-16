@@ -13,7 +13,7 @@ int main() {
    int nn(N),mm;
 
    while( input!='q'){
-
+      std::cout<<std::endl;
       std::cout<<"Enter: ordinary Depth first search[d]\t warnsdorff's heuristics[h]\n";
       while (!(std::cin >> input) || (input != 'd' && input!= 'h' ) ) {
          std::cout << "Bad value!\n";
@@ -38,7 +38,7 @@ int main() {
          std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
       }
       
-      std::cout<<"Enter Row Number \n"<<"N: ";
+      std::cout<<"Enter Row Number(Don't recommend to be over 6 for DFS) \n"<<"N: ";
       
       while (!(std::cin >> nn) || nn < 0 || nn < x) {
             std::cout << "Bad value!\n";
@@ -46,7 +46,7 @@ int main() {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
          }
-      std::cout<<"Enter Column Number \n"<<"M: ";
+      std::cout<<"Enter Column Number(Don't recommend to be over 6 for DFS) \n"<<"M: ";
       while (!(std::cin >> mm) || mm< 0 || mm < y) {
          std::cout << "Bad value!\n";
          std::cout<<"\n"<<"M: ";
@@ -61,7 +61,7 @@ int main() {
          m = nn;
       }
       if ( ((m%2)==1 && (n%2)==1) || (m==1) || (m==2) || (m==4) || (m == 3 && (n == 4 || n == 6 || n == 8 ))){
-         std::cout <<" size of the board is "<<nn<<"*"<<mm<< " Knight's Tour is impossible\n";
+         std::cout <<"size of the board is "<<nn<<"*"<<mm<< "\n(If m and n are both odd) or (m = 1, 2, or 4) or (m = 3 and n = 4, 6, or 8).\nKnight's Tour is impossible\n\n";
          continue;
       }
    
