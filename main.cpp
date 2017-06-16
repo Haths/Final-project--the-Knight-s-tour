@@ -1,10 +1,16 @@
 #include "knight_board.h"
+#include "time.h"
 
 
 // main
 int main() {
 
+   struct timespec start, finish;
+   double elapsed;
+
    char input('a');
+   int x(-1),y(-1);
+   int nn(N),mm;
 
    while( input!='q'){
 
@@ -17,7 +23,7 @@ int main() {
       }
 
       std::cout<<"Enter initial (x,y) coordinates \n"<<"x: ";
-      int x(-1),y(-1);
+      
       while (!(std::cin >> x) || x < 0 ) {
             std::cout << "Bad value!\n";
             std::cout<<"\n"<<"x: ";
@@ -33,7 +39,7 @@ int main() {
       }
       
       std::cout<<"Enter Row Number \n"<<"N: ";
-      int nn(N),mm;
+      
       while (!(std::cin >> nn) || nn < 0 || nn < x) {
             std::cout << "Bad value!\n";
             std::cout<<"\n"<<"N: ";
@@ -59,7 +65,7 @@ int main() {
          continue;
       }
    
-   
+      clock_gettime(CLOCK_MONOTONIC, &start);
       if(input == 'd'){
          dfs_board game(nn,mm);
          game.Tour(x,y);
@@ -70,6 +76,12 @@ int main() {
          game.Tour(x,y);
          game.printboard();
       }
+
+      clock_gettime(CLOCK_MONOTONIC, &finish);
+      elapsed = (finish.tv_sec - start.tv_sec);
+      elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+
+      std::cout<<"It takes "<<elapsed<<" seconds to calculate.\n\n";
 
       std::cout<<"Quit[q]? Enter any other key to continue\n";
       std::cin >> input;
