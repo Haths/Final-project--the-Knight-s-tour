@@ -7,7 +7,7 @@ A [knight's tour](https://en.wikipedia.org/wiki/Knight%27s_tour) is a sequence o
 
 
 ### Implementation Details
-Source code is inside three files: ** main.cpp, knight_board.cpp, knight_board.h**.
+Source code is inside three files: **main.cpp, knight_board.cpp, knight_board.h**.
 
 ####  Algorithms:
 I provide two way to solve the problem, one is implemented with ordinary depth first search algorithm, the other with [_Warnsdorff’s algorithm_](http://www.geeksforgeeks.org/warnsdorffs-algorithm-knights-tour-problem/).
