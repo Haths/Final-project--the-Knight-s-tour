@@ -61,7 +61,7 @@ int main() {
          m = nn;
       }
       if ( ((m%2)==1 && (n%2)==1) || (m==1) || (m==2) || (m==4) || (m == 3 && (n == 4 || n == 6 || n == 8 ))){
-         std::cout << " Knight's Tour is impossible\n";
+         std::cout <<" size of the board is "<<nn<<"*"<<mm<< " Knight's Tour is impossible\n";
          continue;
       }
    
@@ -81,7 +81,7 @@ int main() {
       elapsed = (finish.tv_sec - start.tv_sec);
       elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
 
-      std::cout<<"It takes "<<elapsed<<" seconds to calculate.\n\n";
+      std::cout<<"The board is "<<nn<<"*"<<mm<<".\nIt takes "<<elapsed<<" seconds to solve this problem.\n\n";
 
       std::cout<<"Quit[q]? Enter any other key to continue\n";
       std::cin >> input;
