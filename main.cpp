@@ -64,6 +64,7 @@ int main() {
          std::cout <<"size of the board is "<<nn<<"*"<<mm<< "\n(If m and n are both odd) or (m = 1, 2, or 4) or (m = 3 and n = 4, 6, or 8).\nKnight's Tour is impossible\n\n";
          continue;
       }
+      std::cout<<"the problem is being calculated...\n";
    
       clock_gettime(CLOCK_MONOTONIC, &start);
       if(input == 'd'){
