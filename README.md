@@ -57,13 +57,32 @@ Both are derived class from abstract class **_board_base_**, in which _void Tour
 * In practice, I got an answer of 100 * 100 size board in two minutes.
 
 ### Command Line Interface(CLI)
+The interface asks the user to input the choice of algorithm use, the starting point of a tour, and the size of the board.
+
+* if the size of the board guarantee no tours, it will repeat these questions.
+![question](https://github.com/Haths/Final-project--the-Knight-s-tour/blob/master/illustration/question.png)
+
+
+* if the a problem is solvable, then proceed to calcualte ( be patient if the board size is big)
+
+* then the program will print out the solution, i.e a matrix of number, each of them indicates the order of move in the tour
+![solution](https://github.com/Haths/Final-project--the-Knight-s-tour/blob/master/illustration/solution.png)
+
+* at the end of the solution, we provides the time of calculating the tour.
+![timer](https://github.com/Haths/Final-project--the-Knight-s-tour/blob/master/illustration/timer.png)
+
+
+
+
+### Different Algorithm Interface:
+
 * **Depth first search Algorithm:**
 ![cli-exsearch](https://github.com/Haths/Final-project--the-Knight-s-tour/blob/master/illustration/DFS.png)
 
 * **Warnsdorff’s algorithm**:
 ![cli-check](https://github.com/Haths/Final-project--the-Knight-s-tour/blob/master/illustration/heuristic.png)
 
-**Board_size Checking**:
+* **Board_size Checking**:
 ![cli-tour1](https://github.com/Haths/Final-project--the-Knight-s-tour/blob/master/illustration/safe_guard.png)
 
 
