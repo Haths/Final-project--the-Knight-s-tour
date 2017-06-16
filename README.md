@@ -70,3 +70,4 @@ Both are derived class from abstract class **_board_base_**, in which _void Tour
 
 ### Under Construction:
 GUI  ...
+(seems pretty hard in this part and I run out of time ...)
