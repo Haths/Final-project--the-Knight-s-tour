@@ -2,6 +2,7 @@
 #define KNIGHT_TOUR_H
 
 #include <QMainWindow>
+#include "knight_board.h"
 
 namespace Ui {
 class knight_tour;

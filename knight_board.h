@@ -18,7 +18,7 @@ template<typename PRED>
 bool _testmove(const int& x, const int&y, PRED pred){
    int sx,sy;
 
-   for (size_t i = 0; i < 8; ++i) {
+   for (int i = 0; i < 8; ++i) {
       sx = x + move_x[i];
       sy = y + move_y[i];
 
@@ -34,17 +34,23 @@ class board_base{
 
 public:
    //default constructor
-   board_base( size_t n, size_t m);
+   board_base( int n, int m);
 
 
    //destructor
    virtual ~board_base();
 
 
+   //resize the board
+   //customize for any requir
+   //function for resize the chessboard 
+   //user change
+   void resize(int n, int m);
+
    // print out the steps in correct way
-   inline void printboard() {
-      for (size_t i = 0; i < nRow; i++) {
-         for (size_t j = 0; j < nCol; j++) {
+   void printboard() {
+      for (int i = 0; i < nRow; i++) {
+         for (int j = 0; j < nCol; j++) {
              printf("%d\t", board[i*nCol+j]);
          }
          printf("\n");
@@ -60,26 +66,7 @@ protected:
    //dynamic array store the move
    int* board;
    // board size, move count, previoius move
-   size_t nRow,nCol,count,last_x,last_y;
-
-      //function for resize the chessboard 
-   //user change
-   inline void resize(size_t n, size_t m){
-      delete [] board;
-      board = nullptr;
-      try{
-            board = new int [n*m];
-            std::fill_n(board, n*m, 0); 
-         }
-         catch(const std::exception& e){
-            delete[] board;
-            throw e;
-         }
-      count = 1;
-      nCol = m;
-      nRow = n;
-   }
-
+   int nRow,nCol,count,last_x,last_y;
 
 
    //function for checking if it has a walk of enough length
@@ -115,7 +102,7 @@ protected:
 // super inefficient
 class dfs_board : public board_base {
 public:
-   dfs_board(size_t nn=6, size_t mm=6)
+   dfs_board(int nn=6, int mm=6)
       :board_base(nn,mm){}
 
    virtual ~dfs_board(){}
@@ -145,7 +132,7 @@ class heuristic_board : public board_base {
 
 public:
    //constructor
-   heuristic_board(size_t nn=N, size_t mm=N)
+   heuristic_board(int nn=N, int mm=N)
       :board_base(nn,mm){}
 
    virtual ~heuristic_board(){};
@@ -190,12 +177,12 @@ private:
    }
 
    //  heuristic of an move
-   inline size_t getDegree(const int& x, const int& y){
+   inline int getDegree(const int& x, const int& y){
       
       int sx,sy;
-      size_t num(0);
+      int num(0);
 
-      for (size_t i = 0; i < 8; ++i) {
+      for (int i = 0; i < 8; ++i) {
       // get the next move
          sx = x + move_x[i];
          sy = y + move_y[i];
@@ -239,4 +226,4 @@ private:
 
 
 
-#endif // KNIGHT_TOUR_H
+#endif // KNIGHT_BOARD_H
