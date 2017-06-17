@@ -81,6 +81,7 @@ protected:
    }
 
    //check if is a closed tour
+   //lambda function
    inline bool istour(const int& initx, const int& inity){
 
       auto fn=[&](const int& x, const int& y)->bool{
@@ -90,8 +91,6 @@ protected:
       return _testmove(last_x, last_y, fn);
 
    }
-
-
 
 };
 
@@ -152,8 +151,7 @@ public:
    //wrapper function for find tour
    void Tour(const int& initx, const int& inity);
 
-
-   
+  
    
 private:
    //private member to store next_move, last_move
